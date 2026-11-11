@@ -7,7 +7,7 @@
     const notyf = new Notyf();
 
     const WEB3FORMS_ACCESS_KEY = 'f965fc96-ebbe-4f22-9750-fd42dc8f25b8';
-    const SITE_KEY = '6LcJkBouAAAAAAWZhAoLP3AejbsNQGGZNlFQX2c_'
+    const SITE_KEY = '6LetlhouAAAAANG9n2HNhLWs33oxIZd_IhP5o1jc'; // Replace with your Vercel site key
 
     // Initial value for the email:
 
@@ -43,12 +43,13 @@
                 }
             });
 
-            const result = response.data
+            const result = response.data;
             if(result.success){
-                notyf.success("Your message has been sent successfuly!");
+                notyf.success("Your message has been sent successfully!");
                 name.value = "";
                 email.value = "";
                 message.value = "";
+                resetRecaptcha(); // Automatically clears/resets the reCAPTCHA widget
             }else{
                 notyf.error(response.data.message || "Failed to send message. Please try again.");
             }
@@ -59,65 +60,56 @@
             isLoading.value = false;
         }
     }
+
     const recaptchaContainer = ref(null);
     const recaptchaWidgetId = ref(null);
     const recaptchaToken = ref('');
 
     // Callback called by reCAPTCHA when successful
     function onRecaptchaSuccess(token) {
-    recaptchaToken.value = token;
+        recaptchaToken.value = token;
     }
 
     // Callback when expired
     function onRecaptchaExpired() {
-    recaptchaToken.value = '';
+        recaptchaToken.value = '';
     }
 
     // Function to render the reCAPTCHA widget
     function renderRecaptcha() {
-    if (!window.grecaptcha) {
-        console.error('reCAPTCHA not loaded');
-        return;
-    }
+        if (!window.grecaptcha) {
+            console.error('reCAPTCHA not loaded');
+            return;
+        }
 
-    recaptchaWidgetId.value = window.grecaptcha.render(recaptchaContainer.value, {
-        sitekey: SITE_KEY,
-        size: 'normal', // or 'compact'
-        callback: onRecaptchaSuccess,
-        'expired-callback': onRecaptchaExpired,
-    });
+        recaptchaWidgetId.value = window.grecaptcha.render(recaptchaContainer.value, {
+            sitekey: SITE_KEY,
+            size: 'normal',
+            callback: onRecaptchaSuccess,
+            'expired-callback': onRecaptchaExpired,
+        });
     }
 
     // Function to reset reCAPTCHA 
     function resetRecaptcha() {
-    if (recaptchaWidgetId.value !== null) {
-        window.grecaptcha.reset(recaptchaWidgetId.value);
-        recaptchaToken.value = '';
+        if (recaptchaWidgetId.value !== null) {
+            window.grecaptcha.reset(recaptchaWidgetId.value);
+            recaptchaToken.value = '';
+        }
     }
-    }
 
+    onMounted(() => {
+        const interval = setInterval(() => {
+            if (window.grecaptcha && window.grecaptcha.render) {
+                renderRecaptcha();
+                clearInterval(interval);
+            }
+        }, 100);
 
-
-onMounted(() => {
-  // This code waits for the Google reCAPTCHA library to load, then renders the reCAPTCHA widget using onMounted hook. 
-  // The widget is rendered with grecaptcha.render(), which requires a sitekey. 
-  // Callback functions handle success and expiration events. 
-  // reCAPTCHA is reset upon form submission to clear the token.
-  const interval = setInterval(() => {
-    if (window.grecaptcha && window.grecaptcha.render) {
-      renderRecaptcha();
-      clearInterval(interval);
-    }
-  }, 100);
-
-  onBeforeUnmount(() => {
-    clearInterval(interval);
-  });
-});
-
-    
-
-
+        onBeforeUnmount(() => {
+            clearInterval(interval);
+        });
+    });
 </script>
 
 <template>
@@ -156,7 +148,6 @@ onMounted(() => {
                     </div>
                     <div class="form-footer">
                         <div class="social-icons">
-                            <!--<a href="https://www.facebook.com/profile.php?id=100085701498879" id="facebook"><i class="fab fa-facebook"></i></a> -->
                             <a href="https://www.linkedin.com/in/charles-babbage-8291a6211/" id="linkedin"><i class="fab fa-linkedin"></i></a>
                             <a href="https://gitlab.com/cbabbage0991" id="gitlab"><i class="fab fa-gitlab"></i></a>
                             <a href="https://github.com/cbabbage0991" id="github"><i class="fab fa-github"></i></a>
@@ -170,9 +161,7 @@ onMounted(() => {
                     <div class="d-flex justify-content-end mt-2">
                         <div ref="recaptchaContainer"></div>
                     </div>
-
                 </form>
-                
             </div>
         </div>
     </div>
